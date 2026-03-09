@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pad Input Overlay Creator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080810;
+      --surface: #0e0e1a;
+      --surface2: #13131f;
+      --border: #1e1e32;
+      --accent: #e8ff47;
+      --accent2: #47b4ff;
+      --text: #e0e0f0;
+      --muted: #5a5a7a;
+      --muted2: #3a3a55;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── Grain overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.4;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 18px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    nav.scrolled {
+      background: rgba(8,8,16,0.92);
+      border-color: var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 2px;
+      color: var(--accent);
+    }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── Hero ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 48px 80px;
+      position: relative;
+      overflow: hidden;
+      max-width: 100%;
+      margin: 0;
+    }
+
+    /* Grid background */
+    #hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.1s forwards;
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(64px, 10vw, 130px);
+      line-height: 0.92;
+      letter-spacing: 3px;
+      color: var(--text);
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.2s forwards;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .hero-tagline {
+      font-size: 16px;
+      font-weight: 300;
+      color: var(--muted);
+      max-width: 480px;
+      margin: 0 auto 48px;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.35s forwards;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--accent);
+      color: #080810;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 14px 32px;
+      border-radius: 2px;
+      transition: background 0.15s, transform 0.15s;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.5s forwards;
+    }
+    .hero-cta:hover { background: #f5ff7a; transform: translateY(-2px); }
+    .hero-cta svg { width: 14px; height: 14px; }
+
+    .hero-scroll-hint {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.8s forwards;
+    }
+    .scroll-line {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--muted2), transparent);
+      animation: scrollPulse 2s infinite;
+    }
+
+    /* ── Sections ── */
+    section {
+      padding: 100px 48px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      max-width: 80px;
+    }
+
+    h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(36px, 5vw, 56px);
+      letter-spacing: 2px;
+      color: var(--text);
+      margin-bottom: 48px;
+      line-height: 1;
+    }
+
+    /* ── Product overview ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .feature-card {
+      background: var(--surface);
+      padding: 36px 32px;
+      transition: background 0.2s;
+    }
+    .feature-card:hover { background: var(--surface2); }
+
+    .feature-icon {
+      width: 36px;
+      height: 36px;
+      margin-bottom: 20px;
+      color: var(--accent);
+    }
+
+    .feature-card h3 {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: var(--text);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ── Pad styles ── */
+    #styles { border-top: 1px solid var(--border); }
+
+    .styles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .style-card {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+      cursor: pointer;
+    }
+    .style-card:hover { border-color: var(--muted2); transform: translateY(-3px); }
+
+    .style-preview {
+      aspect-ratio: 1;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--border);
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .style-preview svg { max-width: 100%; max-height: 100%; }
+
+    .style-info { padding: 20px 24px; }
+    .style-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .style-desc {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ── OBS Setup ── */
+    #obs-setup { border-top: 1px solid var(--border); }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border: 1px solid var(--border);
+    }
+
+    .step {
+      display: flex;
+      gap: 28px;
+      padding: 28px 32px;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+      transition: background 0.15s;
+    }
+    .step:last-child { border-bottom: none; }
+    .step:hover { background: var(--surface); }
+
+    .step-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      color: var(--muted2);
+      line-height: 1;
+      flex-shrink: 0;
+      width: 36px;
+    }
+
+    .step-content h3 {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .step-content p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .step-content code {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 2px;
+      color: var(--accent2);
+    }
+
+    /* ── Requirements ── */
+    #requirements { border-top: 1px solid var(--border); }
+
+    .req-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .req-card {
+      background: var(--surface);
+      padding: 28px 32px;
+    }
+
+    .req-card h3 {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 12px;
+    }
+    .req-card p, .req-card li {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+    .req-card ul { padding-left: 16px; }
+
+    .req-note {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      padding: 16px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .req-note strong {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: var(--muted2);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+    .footer-links a {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer-links a:hover { color: var(--muted); }
+
+    .footer-credit {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--muted2);
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s, transform 0.6s;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    @media (max-width: 768px) {
+      nav { padding: 16px 24px; }
+      .nav-links { display: none; }
+      section { padding: 64px 24px; }
+      #hero { padding: 100px 24px 64px; }
+      .req-grid { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 20px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav id="nav">
+    <div class="nav-logo">PIOC</div>
+    <ul class="nav-links">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#styles">Styles</a></li>
+      <li><a href="#obs-setup">OBS Setup</a></li>
+      <li><a href="#requirements">Requirements</a></li>
+      <li><a href="configurator.html">Configurator →</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero -->
+  <section id="hero">
+    <p class="hero-eyebrow">Dance Pad Input Overlay Creator</p>
+    <h1>Pad <span>Input</span><br>Overlay<br>Creator</h1>
+    <p class="hero-tagline">Create custom dance pad input overlays for use in your streaming/recording software</p>
+    <a href="configurator.html" class="hero-cta">
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M2 7h10M8 3l4 4-4 4"/>
+      </svg>
+      Create your overlay
+    </a>
+    <div class="hero-scroll-hint">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- Product Overview -->
+  <section id="overview">
+    <p class="section-label reveal">What it does</p>
+    <h2 class="reveal">Built for dancers,<br>made for stream</h2>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="4" y="4" width="28" height="28" rx="2"/>
+          <path d="M4 14h28M14 4v28"/>
+        </svg>
+        <h3>Multiple pad styles</h3>
+        <p>Choose from a growing collection of pad designs — from FSR mini pads to full-size dance stages.</p>
+      </div>
+      <div class="feature-card reveal">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="18" cy="18" r="14"/>
+          <path d="M18 10v8l5 5"/>
+        </svg>
+        <h3>Visual input mapping</h3>
+        <p>Assign your controller inputs by simply pressing the panel on your pad — no guessing button indices.</p>
+      </div>
+      <div class="feature-card reveal">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="18" r="4"/><circle cx="24" cy="18" r="4"/>
+          <path d="M8 10l-4 8 4 8M28 10l4 8-4 8"/>
+        </svg>
+        <h3>Custom LED colors</h3>
+        <p>Pick exactly the colors you want for each panel. Live preview updates as you configure.</p>
+      </div>
+      <div class="feature-card reveal">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M10 28l4-4 4 4 4-8 4 8"/>
+          <rect x="4" y="4" width="28" height="20" rx="2"/>
+        </svg>
+        <h3>Export & drop in</h3>
+        <p>Download a single self-contained HTML file. Add it as a browser source in OBS or any compatible software.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pad Styles -->
+  <section id="styles">
+    <p class="section-label reveal">Available designs</p>
+    <h2 class="reveal">Pad Styles</h2>
+    <div class="styles-grid">
+
+      <!-- 1. Simple -->
+      <div class="style-card reveal">
+        <div class="style-preview">
+          <svg width="220" height="220" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <!-- outer body -->
+            <rect width="512" height="512" rx="28" fill="#181818"/>
+            <!-- corner panels -->
+            <rect x="8"   y="8"   width="155" height="155" rx="10" fill="#1f1f1f" stroke="#2a2a2a" stroke-width="1.5"/>
+            <rect x="349" y="8"   width="155" height="155" rx="10" fill="#1f1f1f" stroke="#2a2a2a" stroke-width="1.5"/>
+            <rect x="8"   y="349" width="155" height="155" rx="10" fill="#1f1f1f" stroke="#2a2a2a" stroke-width="1.5"/>
+            <rect x="349" y="349" width="155" height="155" rx="10" fill="#1f1f1f" stroke="#2a2a2a" stroke-width="1.5"/>
+            <!-- center panel -->
+            <rect x="171" y="171" width="170" height="170" rx="10" fill="#252525" stroke="#303030" stroke-width="1.5"/>
+            <!-- UP panel -->
+            <rect x="171" y="8" width="170" height="155" rx="10" fill="#222" stroke="#2e2e2e" stroke-width="1.5"/>
+            <polygon points="256,46 214,114 298,114" fill="#4a4a4a"/>
+            <rect x="206" y="126" width="100" height="7" rx="3" fill="#161616" stroke="#333" stroke-width="1"/>
+            <!-- DOWN panel -->
+            <rect x="171" y="349" width="170" height="155" rx="10" fill="#222" stroke="#2e2e2e" stroke-width="1.5"/>
+            <polygon points="256,466 214,398 298,398" fill="#4a4a4a"/>
+            <rect x="206" y="379" width="100" height="7" rx="3" fill="#161616" stroke="#333" stroke-width="1"/>
+            <!-- LEFT panel -->
+            <rect x="8" y="171" width="155" height="170" rx="10" fill="#222" stroke="#2e2e2e" stroke-width="1.5"/>
+            <polygon points="46,256 114,214 114,298" fill="#4a4a4a"/>
+            <rect x="126" y="206" width="7" height="100" rx="3" fill="#161616" stroke="#333" stroke-width="1"/>
+            <!-- RIGHT panel -->
+            <rect x="349" y="171" width="155" height="170" rx="10" fill="#222" stroke="#2e2e2e" stroke-width="1.5"/>
+            <polygon points="466,256 398,214 398,298" fill="#4a4a4a"/>
+            <rect x="379" y="206" width="7" height="100" rx="3" fill="#161616" stroke="#333" stroke-width="1"/>
+            <!-- corner screws -->
+            <circle cx="30"  cy="30"  r="10" fill="#141414" stroke="#2a2a2a" stroke-width="1.5"/>
+            <line x1="24" y1="30" x2="36" y2="30" stroke="#444" stroke-width="1.5"/>
+            <line x1="30" y1="24" x2="30" y2="36" stroke="#444" stroke-width="1.5"/>
+            <circle cx="482" cy="30"  r="10" fill="#141414" stroke="#2a2a2a" stroke-width="1.5"/>
+            <line x1="476" y1="30" x2="488" y2="30" stroke="#444" stroke-width="1.5"/>
+            <line x1="482" y1="24" x2="482" y2="36" stroke="#444" stroke-width="1.5"/>
+            <circle cx="30"  cy="482" r="10" fill="#141414" stroke="#2a2a2a" stroke-width="1.5"/>
+            <line x1="24" y1="482" x2="36" y2="482" stroke="#444" stroke-width="1.5"/>
+            <line x1="30" y1="476" x2="30" y2="488" stroke="#444" stroke-width="1.5"/>
+            <circle cx="482" cy="482" r="10" fill="#141414" stroke="#2a2a2a" stroke-width="1.5"/>
+            <line x1="476" y1="482" x2="488" y2="482" stroke="#444" stroke-width="1.5"/>
+            <line x1="482" y1="476" x2="482" y2="488" stroke="#444" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="style-info">
+          <div class="style-name">Simple</div>
+          <div class="style-desc">The original design. Clean panels with directional arrows and FSR bar indicators.</div>
+        </div>
+      </div>
+
+      <!-- 2. Modern -->
+      <div class="style-card reveal">
+        <div class="style-preview">
+          <svg width="220" height="220" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <!-- outer body -->
+            <rect width="512" height="512" rx="28" fill="#0e0e16"/>
+            <!-- corner panels -->
+            <rect x="8"   y="8"   width="155" height="155" rx="10" fill="#141420" stroke="#1e1e2e" stroke-width="1.5"/>
+            <rect x="349" y="8"   width="155" height="155" rx="10" fill="#141420" stroke="#1e1e2e" stroke-width="1.5"/>
+            <rect x="8"   y="349" width="155" height="155" rx="10" fill="#141420" stroke="#1e1e2e" stroke-width="1.5"/>
+            <rect x="349" y="349" width="155" height="155" rx="10" fill="#141420" stroke="#1e1e2e" stroke-width="1.5"/>
+            <!-- center panel -->
+            <rect x="171" y="171" width="170" height="170" rx="10" fill="#181828" stroke="#222235" stroke-width="1.5"/>
+            <!-- UP panel -->
+            <rect x="171" y="8" width="170" height="155" rx="10" fill="#141420" stroke="#1e1e2e" stroke-width="1.5"/>
+            <!-- DOWN panel -->
+            <rect x="171" y="349" width="170" height="155" rx="10" fill="#141420" stroke="#1e1e2e" stroke-width="1.5"/>
+            <!-- LEFT panel -->
+            <rect x="8" y="171" width="155" height="170" rx="10" fill="#141420" stroke="#1e1e2e" stroke-width="1.5"/>
+            <!-- RIGHT panel -->
+            <rect x="349" y="171" width="155" height="170" rx="10" fill="#141420" stroke="#1e1e2e" stroke-width="1.5"/>
+            <!-- subtle corner dots -->
+            <circle cx="26"  cy="26"  r="5" fill="#1e1e30" stroke="#252538" stroke-width="1"/>
+            <circle cx="486" cy="26"  r="5" fill="#1e1e30" stroke="#252538" stroke-width="1"/>
+            <circle cx="26"  cy="486" r="5" fill="#1e1e30" stroke="#252538" stroke-width="1"/>
+            <circle cx="486" cy="486" r="5" fill="#1e1e30" stroke="#252538" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="style-info">
+          <div class="style-name">Modern</div>
+          <div class="style-desc">Ultra-minimal. Pure panels, no decoration — lets the lighting do the talking.</div>
+        </div>
+      </div>
+
+      <!-- FSR Mini Pad style -->
+      <div class="style-card reveal">
+        <div class="style-preview">
+          <svg width="220" height="220" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="prev-mtl" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#d2d2d2"/>
+                <stop offset="50%" stop-color="#b8b8b8"/>
+                <stop offset="100%" stop-color="#c6c6c6"/>
+              </linearGradient>
+            </defs>
+            <!-- Body -->
+            <polygon points="135,2 377,2 510,135 510,377 377,510 135,510 2,377 2,135" fill="url(#prev-mtl)" stroke="#888" stroke-width="2"/>
+            <polygon points="135,2 2,135 135,135" fill="#aaa" stroke="#888" stroke-width="1"/>
+            <polygon points="377,2 510,135 377,135" fill="#aaa" stroke="#888" stroke-width="1"/>
+            <polygon points="2,377 135,510 135,377" fill="#aaa" stroke="#888" stroke-width="1"/>
+            <polygon points="510,377 377,510 377,377" fill="#aaa" stroke="#888" stroke-width="1"/>
+            <!-- Center -->
+            <rect x="135" y="135" width="242" height="242" fill="url(#prev-mtl)" stroke="#aaa" stroke-width="1.5"/>
+            <!-- Panels (unlit) -->
+            <rect x="135" y="2"   width="242" height="133" fill="#1e1e1e" stroke="#3a3a3a" stroke-width="1.5"/>
+            <rect x="135" y="377" width="242" height="133" fill="#1e1e1e" stroke="#3a3a3a" stroke-width="1.5"/>
+            <rect x="2"   y="135" width="133" height="242" fill="#1e1e1e" stroke="#3a3a3a" stroke-width="1.5"/>
+            <rect x="377" y="135" width="133" height="242" fill="#1e1e1e" stroke="#3a3a3a" stroke-width="1.5"/>
+            <!-- LED PCBs (unlit, natural color) -->
+            <rect x="171" y="53"  width="170" height="30" rx="2" fill="#b8c8d0" stroke="#8aa0a8" stroke-width="0.8"/>
+            <rect x="171" y="429" width="170" height="30" rx="2" fill="#b8c8d0" stroke="#8aa0a8" stroke-width="0.8"/>
+            <rect x="53"  y="171" width="30" height="170" rx="2" fill="#b8c8d0" stroke="#8aa0a8" stroke-width="0.8"/>
+            <rect x="429" y="171" width="30" height="170" rx="2" fill="#b8c8d0" stroke="#8aa0a8" stroke-width="0.8"/>
+            <!-- LED dots UP (unlit) -->
+            <g fill="#666" stroke="#444" stroke-width="0.4">
+              <circle cx="182" cy="61" r="5"/><circle cx="203" cy="61" r="5"/><circle cx="224" cy="61" r="5"/><circle cx="245" cy="61" r="5"/>
+              <circle cx="266" cy="61" r="5"/><circle cx="287" cy="61" r="5"/><circle cx="308" cy="61" r="5"/><circle cx="329" cy="61" r="5"/>
+              <circle cx="182" cy="75" r="5"/><circle cx="203" cy="75" r="5"/><circle cx="224" cy="75" r="5"/><circle cx="245" cy="75" r="5"/>
+              <circle cx="266" cy="75" r="5"/><circle cx="287" cy="75" r="5"/><circle cx="308" cy="75" r="5"/><circle cx="329" cy="75" r="5"/>
+            </g>
+            <!-- LED dots LEFT (unlit) -->
+            <g fill="#666" stroke="#444" stroke-width="0.4">
+              <circle cx="61" cy="182" r="5"/><circle cx="61" cy="203" r="5"/><circle cx="61" cy="224" r="5"/><circle cx="61" cy="245" r="5"/>
+              <circle cx="61" cy="266" r="5"/><circle cx="61" cy="287" r="5"/><circle cx="61" cy="308" r="5"/><circle cx="61" cy="329" r="5"/>
+              <circle cx="75" cy="182" r="5"/><circle cx="75" cy="203" r="5"/><circle cx="75" cy="224" r="5"/><circle cx="75" cy="245" r="5"/>
+              <circle cx="75" cy="266" r="5"/><circle cx="75" cy="287" r="5"/><circle cx="75" cy="308" r="5"/><circle cx="75" cy="329" r="5"/>
+            </g>
+            <!-- LED dots RIGHT (unlit) -->
+            <g fill="#666" stroke="#444" stroke-width="0.4">
+              <circle cx="437" cy="182" r="5"/><circle cx="437" cy="203" r="5"/><circle cx="437" cy="224" r="5"/><circle cx="437" cy="245" r="5"/>
+              <circle cx="437" cy="266" r="5"/><circle cx="437" cy="287" r="5"/><circle cx="437" cy="308" r="5"/><circle cx="437" cy="329" r="5"/>
+              <circle cx="451" cy="182" r="5"/><circle cx="451" cy="203" r="5"/><circle cx="451" cy="224" r="5"/><circle cx="451" cy="245" r="5"/>
+              <circle cx="451" cy="266" r="5"/><circle cx="451" cy="287" r="5"/><circle cx="451" cy="308" r="5"/><circle cx="451" cy="329" r="5"/>
+            </g>
+            <!-- LED dots DOWN (unlit) -->
+            <g fill="#666" stroke="#444" stroke-width="0.4">
+              <circle cx="182" cy="437" r="5"/><circle cx="203" cy="437" r="5"/><circle cx="224" cy="437" r="5"/><circle cx="245" cy="437" r="5"/>
+              <circle cx="266" cy="437" r="5"/><circle cx="287" cy="437" r="5"/><circle cx="308" cy="437" r="5"/><circle cx="329" cy="437" r="5"/>
+              <circle cx="182" cy="451" r="5"/><circle cx="203" cy="451" r="5"/><circle cx="224" cy="451" r="5"/><circle cx="245" cy="451" r="5"/>
+              <circle cx="266" cy="451" r="5"/><circle cx="287" cy="451" r="5"/><circle cx="308" cy="451" r="5"/><circle cx="329" cy="451" r="5"/>
+            </g>
+            <!-- FSR assemblies (main bar) -->
+            <rect x="175" y="96"  width="162" height="26" rx="2" fill="#222" stroke="#444" stroke-width="1"/>
+            <rect x="189" y="102" width="134" height="12" rx="1" fill="#2a2828" stroke="#3a3a3a" stroke-width="0.5"/>
+            <rect x="161" y="93"  width="28"  height="32" rx="2" fill="#1e1e1e" stroke="#333" stroke-width="0.8"/>
+            <rect x="323" y="93"  width="28"  height="32" rx="2" fill="#1e1e1e" stroke="#333" stroke-width="0.8"/>
+
+            <rect x="175" y="390" width="162" height="26" rx="2" fill="#222" stroke="#444" stroke-width="1"/>
+            <rect x="189" y="396" width="134" height="12" rx="1" fill="#2a2828" stroke="#3a3a3a" stroke-width="0.5"/>
+            <rect x="161" y="387" width="28"  height="32" rx="2" fill="#1e1e1e" stroke="#333" stroke-width="0.8"/>
+            <rect x="323" y="387" width="28"  height="32" rx="2" fill="#1e1e1e" stroke="#333" stroke-width="0.8"/>
+
+            <rect x="96"  y="175" width="26" height="162" rx="2" fill="#222" stroke="#444" stroke-width="1"/>
+            <rect x="102" y="189" width="12" height="134" rx="1" fill="#2a2828" stroke="#3a3a3a" stroke-width="0.5"/>
+            <rect x="93"  y="161" width="32" height="28"  rx="2" fill="#1e1e1e" stroke="#333" stroke-width="0.8"/>
+            <rect x="93"  y="323" width="32" height="28"  rx="2" fill="#1e1e1e" stroke="#333" stroke-width="0.8"/>
+
+            <rect x="390" y="175" width="26" height="162" rx="2" fill="#222" stroke="#444" stroke-width="1"/>
+            <rect x="396" y="189" width="12" height="134" rx="1" fill="#2a2828" stroke="#3a3a3a" stroke-width="0.5"/>
+            <rect x="387" y="161" width="32" height="28"  rx="2" fill="#1e1e1e" stroke="#333" stroke-width="0.8"/>
+            <rect x="387" y="323" width="32" height="28"  rx="2" fill="#1e1e1e" stroke="#333" stroke-width="0.8"/>
+            <!-- Frame lines -->
+            <line x1="135" y1="135" x2="377" y2="135" stroke="#777" stroke-width="2"/>
+            <line x1="135" y1="377" x2="377" y2="377" stroke="#777" stroke-width="2"/>
+            <line x1="135" y1="135" x2="135" y2="377" stroke="#777" stroke-width="2"/>
+            <line x1="377" y1="135" x2="377" y2="377" stroke="#777" stroke-width="2"/>
+            <!-- Corner screws -->
+            <circle cx="157" cy="19" r="7" fill="#1c1c1c" stroke="#555" stroke-width="1.2"/>
+            <circle cx="355" cy="19" r="7" fill="#1c1c1c" stroke="#555" stroke-width="1.2"/>
+            <circle cx="157" cy="493" r="7" fill="#1c1c1c" stroke="#555" stroke-width="1.2"/>
+            <circle cx="355" cy="493" r="7" fill="#1c1c1c" stroke="#555" stroke-width="1.2"/>
+            <circle cx="19"  cy="157" r="7" fill="#1c1c1c" stroke="#555" stroke-width="1.2"/>
+            <circle cx="19"  cy="355" r="7" fill="#1c1c1c" stroke="#555" stroke-width="1.2"/>
+            <circle cx="493" cy="157" r="7" fill="#1c1c1c" stroke="#555" stroke-width="1.2"/>
+            <circle cx="493" cy="355" r="7" fill="#1c1c1c" stroke="#555" stroke-width="1.2"/>
+          </svg>
+        </div>
+        <div class="style-info">
+          <div class="style-name">FSR Mini Pad</div>
+          <div class="style-desc">Styled after the Rhythm Technologies FSR Mini Pad with LED PCB detail and bloom effects.</div>
+        </div>
+      </div>
+
+
+
+
+    </div>
+  </section>
+
+  <!-- OBS Setup -->
+  <section id="obs-setup">
+    <p class="section-label reveal">Getting started</p>
+    <h2 class="reveal">Setting up in OBS</h2>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-content">
+          <h3>Create your overlay</h3>
+          <p>Use the configurator to pick a pad style, assign your inputs, and customize your colors. When you're done, hit <strong>Export</strong> to download your overlay HTML file.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-content">
+          <h3>Connect your pad</h3>
+          <p>Make sure your dance pad is connected to your PC before launching OBS. It needs to be recognized as a gamepad device by your operating system.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-content">
+          <h3>Add a browser source</h3>
+          <p>In OBS, add a new <strong>Browser Source</strong> to your scene. Check <strong>Local File</strong> and select the HTML file you downloaded.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-content">
+          <h3>Set the dimensions</h3>
+          <p>Set the width and height to <code>512 × 512</code>. Position it wherever you want it in your scene.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">05</div>
+        <div class="step-content">
+          <h3>You're done</h3>
+          <p>The overlay will light up your panels in real time as you step. No refresh needed — it reads your pad input directly through the browser.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Requirements -->
+  <section id="requirements">
+    <p class="section-label reveal">Before you start</p>
+    <h2 class="reveal">Requirements</h2>
+    <div class="req-grid reveal">
+      <div class="req-card">
+        <h3>Your pad</h3>
+        <ul>
+          <li>Must be recognized as a gamepad/HID joystick by your OS</li>
+          <li>FSR pads running ADP firmware work out of the box</li>
+          <li>Any DIY pad using HID-compatible firmware should work</li>
+        </ul>
+      </div>
+      <div class="req-card">
+        <h3>Your software</h3>
+        <ul>
+          <li>OBS Studio, Streamlabs, XSplit, or any software that supports browser sources</li>
+          <li>Browser source must support the <strong>Gamepad API</strong> (all modern Chromium-based browser sources do)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="req-note reveal">
+      <strong>How it works</strong>
+      This tool uses the browser's built-in Gamepad API as the bridge between your physical pad and what you see in the overlay. When you press a panel, your pad sends a button signal through HID, the browser picks it up via the Gamepad API, and the overlay reacts. No extra software or drivers needed beyond what makes your pad show up as a gamepad in the first place.
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-logo">PIOC</div>
+    <ul class="footer-links">
+      <li><a href="https://github.com/playtagg" target="_blank">GitHub</a></li>
+      <li><a href="configurator.html">Configurator</a></li>
+    </ul>
+    <div class="footer-credit">by playtagg</div>
+  </footer>
+
+  <script>
+    // Nav scroll effect
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 40);
+    });
+
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          setTimeout(() => e.target.classList.add('visible'), i * 80);
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    reveals.forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
