@@ -104,6 +104,7 @@
       content: '';
       position: absolute;
       inset: 0;
+      z-index: 0;
       background-image:
         linear-gradient(var(--border) 1px, transparent 1px),
         linear-gradient(90deg, var(--border) 1px, transparent 1px);
@@ -111,6 +112,8 @@
       mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 100%);
       pointer-events: none;
     }
+
+    #hero > * { position: relative; z-index: 1; }
 
     .hero-eyebrow {
       font-family: 'DM Mono', monospace;
@@ -366,6 +369,21 @@
       color: var(--accent2);
     }
 
+    .sw-tab {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .sw-tab:hover { color: var(--text); border-color: var(--border2); }
+    .sw-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(232,255,71,0.06); }
+
     /* ── Requirements ── */
     #requirements { border-top: 1px solid var(--border); }
 
@@ -513,10 +531,6 @@
       </svg>
       Create your overlay
     </a>
-    <div class="hero-scroll-hint">
-      <span>Scroll</span>
-      <div class="scroll-line"></div>
-    </div>
   </section>
 
   <!-- Product Overview -->
@@ -530,7 +544,7 @@
           <path d="M4 14h28M14 4v28"/>
         </svg>
         <h3>Multiple pad styles</h3>
-        <p>Choose from a growing collection of pad designs — from FSR mini pads to full-size dance stages.</p>
+        <p>Choose from a growing collection of pad designs. From FSR mini pads to full-size dance stages.</p>
       </div>
       <div class="feature-card reveal">
         <svg class="feature-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -538,7 +552,7 @@
           <path d="M18 10v8l5 5"/>
         </svg>
         <h3>Visual input mapping</h3>
-        <p>Assign your controller inputs by simply pressing the panel on your pad — no guessing button indices.</p>
+        <p>Assign your controller inputs by simply pressing the panel on your pad. No guessing button indices.</p>
       </div>
       <div class="feature-card reveal">
         <svg class="feature-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -556,6 +570,34 @@
         <h3>Export & drop in</h3>
         <p>Download a single self-contained HTML file. Add it as a browser source in OBS or any compatible software.</p>
       </div>
+    </div>
+  </section>
+
+  <!-- Requirements -->
+  <section id="requirements">
+    <p class="section-label reveal">Before you start</p>
+    <h2 class="reveal">Requirements</h2>
+    <div class="req-grid reveal">
+      <div class="req-card">
+        <h3>Your pad</h3>
+        <ul>
+          <li>Must be recognized as a gamepad/HID joystick by your OS</li>
+          <li>FSR pads running ADP firmware work out of the box</li>
+          <li>Any DIY pad using HID-compatible firmware should work</li>
+        </ul>
+      </div>
+      <div class="req-card">
+        <h3>Your software</h3>
+        <ul>
+          <li>Works in any Chromium-based browser locally — just open the HTML file</li>
+          <li>OBS Studio, Streamlabs, XSplit, or any software that supports browser sources for streaming</li>
+          <li>Browser source must support the <strong>Gamepad API</strong> (all modern Chromium-based browser sources do)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="req-note reveal">
+      <strong>How it works</strong>
+      This tool uses the browser's built-in Gamepad API as the bridge between your physical pad and what you see in the overlay. When you press a panel, your pad sends a button signal through HID, the browser picks it up via the Gamepad API, and the overlay reacts. No extra software or drivers needed beyond what makes your pad show up as a gamepad in the first place.
     </div>
   </section>
 
@@ -645,7 +687,7 @@
         </div>
         <div class="style-info">
           <div class="style-name">Modern</div>
-          <div class="style-desc">Ultra-minimal. Pure panels, no decoration — lets the lighting do the talking.</div>
+          <div class="style-desc">Ultra-minimal. Pure panels, no decoration. Lets the lighting do the talking.</div>
         </div>
       </div>
 
@@ -754,75 +796,56 @@
     </div>
   </section>
 
-  <!-- OBS Setup -->
+  <!-- Setup -->
   <section id="obs-setup">
     <p class="section-label reveal">Getting started</p>
-    <h2 class="reveal">Setting up in OBS</h2>
-    <div class="steps reveal">
-      <div class="step">
-        <div class="step-num">01</div>
-        <div class="step-content">
-          <h3>Create your overlay</h3>
-          <p>Use the configurator to pick a pad style, assign your inputs, and customize your colors. When you're done, hit <strong>Export</strong> to download your overlay HTML file.</p>
+    <h2 class="reveal">Setting up your overlay</h2>
+    <div class="reveal" style="max-width:700px;margin:0 auto 32px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;" id="sw-tabs">
+        <button class="sw-tab active" onclick="showSW('obs')">OBS Studio</button>
+        <button class="sw-tab" onclick="showSW('streamlabs')">Streamlabs</button>
+        <button class="sw-tab" onclick="showSW('vmix')">vMix</button>
+        <button class="sw-tab" onclick="showSW('xsplit')">XSplit</button>
+      </div>
+
+      <div class="sw-panel" id="sw-obs">
+        <div class="steps">
+          <div class="step"><div class="step-num">01</div><div class="step-content"><h3>Create your overlay</h3><p>Use the configurator to pick a pad style, assign your inputs, and customize your colors. Hit <strong>Export</strong> to download the HTML file.</p></div></div>
+          <div class="step"><div class="step-num">02</div><div class="step-content"><h3>Connect your pad</h3><p>Make sure your pad is connected and recognized as a gamepad by your OS before opening OBS.</p></div></div>
+          <div class="step"><div class="step-num">03</div><div class="step-content"><h3>Add a browser source</h3><p>In OBS, click <strong>+</strong> in the Sources panel and choose <strong>Browser</strong>. Check <strong>Local File</strong> and select your downloaded HTML file.</p></div></div>
+          <div class="step"><div class="step-num">04</div><div class="step-content"><h3>Set the dimensions</h3><p>Set width and height to <code>512 × 512</code>. Position it wherever you want in your scene.</p></div></div>
         </div>
       </div>
-      <div class="step">
-        <div class="step-num">02</div>
-        <div class="step-content">
-          <h3>Connect your pad</h3>
-          <p>Make sure your dance pad is connected to your PC before launching OBS. It needs to be recognized as a gamepad device by your operating system.</p>
+
+      <div class="sw-panel" id="sw-streamlabs" style="display:none;">
+        <div class="steps">
+          <div class="step"><div class="step-num">01</div><div class="step-content"><h3>Create your overlay</h3><p>Use the configurator to pick a pad style, assign your inputs, and customize your colors. Hit <strong>Export</strong> to download the HTML file.</p></div></div>
+          <div class="step"><div class="step-num">02</div><div class="step-content"><h3>Connect your pad</h3><p>Make sure your pad is connected and recognized as a gamepad by your OS before opening Streamlabs.</p></div></div>
+          <div class="step"><div class="step-num">03</div><div class="step-content"><h3>Add a browser source</h3><p>In Streamlabs, click <strong>+</strong> in Sources and choose <strong>Browser Source</strong>. Enable <strong>Local File</strong> and select your HTML file.</p></div></div>
+          <div class="step"><div class="step-num">04</div><div class="step-content"><h3>Set the dimensions</h3><p>Set width and height to <code>512 × 512</code>. Streamlabs uses the same Chromium browser source as OBS.</p></div></div>
         </div>
       </div>
-      <div class="step">
-        <div class="step-num">03</div>
-        <div class="step-content">
-          <h3>Add a browser source</h3>
-          <p>In OBS, add a new <strong>Browser Source</strong> to your scene. Check <strong>Local File</strong> and select the HTML file you downloaded.</p>
+
+      <div class="sw-panel" id="sw-vmix" style="display:none;">
+        <div class="steps">
+          <div class="step"><div class="step-num">01</div><div class="step-content"><h3>Create your overlay</h3><p>Use the configurator to pick a pad style, assign your inputs, and customize your colors. Hit <strong>Export</strong> to download the HTML file.</p></div></div>
+          <div class="step"><div class="step-num">02</div><div class="step-content"><h3>Connect your pad</h3><p>Make sure your pad is connected and recognized as a gamepad by your OS before opening vMix.</p></div></div>
+          <div class="step"><div class="step-num">03</div><div class="step-content"><h3>Add a web browser input</h3><p>In vMix, click <strong>Add Input</strong> and choose <strong>Web Browser</strong>. Set the URL to the local path of your HTML file using <code>file:///</code>.</p></div></div>
+          <div class="step"><div class="step-num">04</div><div class="step-content"><h3>Set the dimensions</h3><p>Set width and height to <code>512 × 512</code>. vMix's browser input supports the Gamepad API natively.</p></div></div>
         </div>
       </div>
-      <div class="step">
-        <div class="step-num">04</div>
-        <div class="step-content">
-          <h3>Set the dimensions</h3>
-          <p>Set the width and height to <code>512 × 512</code>. Position it wherever you want it in your scene.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">05</div>
-        <div class="step-content">
-          <h3>You're done</h3>
-          <p>The overlay will light up your panels in real time as you step. No refresh needed — it reads your pad input directly through the browser.</p>
+
+      <div class="sw-panel" id="sw-xsplit" style="display:none;">
+        <div class="steps">
+          <div class="step"><div class="step-num">01</div><div class="step-content"><h3>Create your overlay</h3><p>Use the configurator to pick a pad style, assign your inputs, and customize your colors. Hit <strong>Export</strong> to download the HTML file.</p></div></div>
+          <div class="step"><div class="step-num">02</div><div class="step-content"><h3>Connect your pad</h3><p>Make sure your pad is connected and recognized as a gamepad by your OS before opening XSplit.</p></div></div>
+          <div class="step"><div class="step-num">03</div><div class="step-content"><h3>Add a webpage source</h3><p>In XSplit Broadcaster, click <strong>Add Source</strong> and choose <strong>Webpage</strong>. Enter the local file path to your HTML file.</p></div></div>
+          <div class="step"><div class="step-num">04</div><div class="step-content"><h3>Set the dimensions</h3><p>Set width and height to <code>512 × 512</code>. XSplit's Chromium-based webpage source supports the Gamepad API.</p></div></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Requirements -->
-  <section id="requirements">
-    <p class="section-label reveal">Before you start</p>
-    <h2 class="reveal">Requirements</h2>
-    <div class="req-grid reveal">
-      <div class="req-card">
-        <h3>Your pad</h3>
-        <ul>
-          <li>Must be recognized as a gamepad/HID joystick by your OS</li>
-          <li>FSR pads running ADP firmware work out of the box</li>
-          <li>Any DIY pad using HID-compatible firmware should work</li>
-        </ul>
-      </div>
-      <div class="req-card">
-        <h3>Your software</h3>
-        <ul>
-          <li>OBS Studio, Streamlabs, XSplit, or any software that supports browser sources</li>
-          <li>Browser source must support the <strong>Gamepad API</strong> (all modern Chromium-based browser sources do)</li>
-        </ul>
-      </div>
-    </div>
-    <div class="req-note reveal">
-      <strong>How it works</strong>
-      This tool uses the browser's built-in Gamepad API as the bridge between your physical pad and what you see in the overlay. When you press a panel, your pad sends a button signal through HID, the browser picks it up via the Gamepad API, and the overlay reacts. No extra software or drivers needed beyond what makes your pad show up as a gamepad in the first place.
-    </div>
-  </section>
 
   <!-- Footer -->
   <footer>
@@ -831,10 +854,20 @@
       <li><a href="https://github.com/playtagg" target="_blank">GitHub</a></li>
       <li><a href="configurator.html">Configurator</a></li>
     </ul>
-    <div class="footer-credit">by playtagg</div>
+    <div class="footer-credit">made with ♥ by playtagg</div>
   </footer>
 
   <script>
+    // Software tab switcher
+    function showSW(id) {
+      ['obs','streamlabs','vmix','xsplit'].forEach(s => {
+        document.getElementById('sw-' + s).style.display = s === id ? 'block' : 'none';
+      });
+      document.querySelectorAll('.sw-tab').forEach((t, i) => {
+        t.classList.toggle('active', ['obs','streamlabs','vmix','xsplit'][i] === id);
+      });
+    }
+
     // Nav scroll effect
     const nav = document.getElementById('nav');
     window.addEventListener('scroll', () => {
